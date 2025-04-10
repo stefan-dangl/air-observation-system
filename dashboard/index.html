@@ -10,6 +10,7 @@
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
+            --realtime-color: #27ae60;
             --background-color: #f9f9f9;
             --text-color: #333;
             --light-text: #777;
@@ -99,10 +100,16 @@
             text-align: center;
         }
 
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
         .file-input-wrapper {
             position: relative;
             display: inline-block;
-            margin-bottom: 20px;
         }
 
         .file-input-wrapper input[type="file"] {
@@ -115,18 +122,37 @@
             cursor: pointer;
         }
 
-        .file-input-label {
+        .file-input-label,
+        .realtime-button {
             display: inline-block;
             padding: 12px 25px;
-            background-color: var(--secondary-color);
-            color: white;
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .file-input-label {
+            background-color: var(--secondary-color);
+            color: white;
         }
 
         .file-input-label:hover {
             background-color: #2980b9;
+        }
+
+        .realtime-button {
+            background-color: var(--realtime-color);
+            color: white;
+        }
+
+        .realtime-button:hover {
+            background-color: #219955;
+        }
+
+        .realtime-button.active {
+            background-color: #e74c3c;
         }
 
         #file-info {
@@ -189,10 +215,13 @@
         </section>
 
         <section id="upload" class="upload-section">
-            <h3>Upload Your Data</h3>
-            <div class="file-input-wrapper">
-                <input type="file" id="fileInput" accept=".json">
-                <label for="fileInput" class="file-input-label">Choose JSON File</label>
+            <h3>Please select</h3>
+            <div class="button-container">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".json">
+                    <label for="fileInput" class="file-input-label">Choose JSON File</label>
+                </div>
+                <button id="realtimeBtn" class="realtime-button">Realtime Data</button>
             </div>
             <p id="file-info">No file selected</p>
         </section>
@@ -237,11 +266,38 @@
     </div>
 
     <script>
+        // Store chart data for realtime updates
+        const chartData = {
+            'ch4-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
+            'co-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
+            'o2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
+            'co2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
+            'no2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } }
+        };
+
+        let eventSource = null;
+
         document.getElementById('fileInput').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
+            // Stop realtime data if active
+            const realtimeBtn = document.getElementById('realtimeBtn');
+            if (realtimeBtn.classList.contains('active')) {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                realtimeBtn.classList.remove('active');
+                realtimeBtn.textContent = 'Realtime Data';
+            }
+
             document.getElementById('file-info').textContent = `Selected file: ${file.name}`;
+
+            // Reset chart data
+            for (const chartId in chartData) {
+                chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
+            }
 
             const reader = new FileReader();
             reader.onload = function (e) {
@@ -255,11 +311,211 @@
             reader.readAsText(file);
         });
 
+        document.getElementById('realtimeBtn').addEventListener('click', function () {
+            const button = this;
+            if (button.classList.contains('active')) {
+                // Stop realtime updates
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                button.classList.remove('active');
+                button.textContent = 'Realtime Data';
+                document.getElementById('file-info').textContent = 'Realtime data stopped';
+            } else {
+                // Start realtime updates
+                button.classList.add('active');
+                button.textContent = 'Stop Realtime';
+                document.getElementById('file-info').textContent = 'Loading realtime data...';
+
+                // Clear existing chart data
+                for (const chartId in chartData) {
+                    chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
+                }
+
+                // Initialize empty charts
+                initializeEmptyCharts();
+
+                // Connect to SSE endpoint
+                connectToSSE();
+            }
+        });
+
+        function initializeEmptyCharts() {
+            const now = new Date();
+            const emptyLayout = {
+                title: '',
+                xaxis: {
+                    title: 'Time',
+                    type: 'date',
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd',
+                    tickformat: '%H:%M:%S'
+                },
+                yaxis: {
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd'
+                },
+                margin: { t: 10, l: 50, r: 30, b: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                },
+                hovermode: 'x unified'
+            };
+
+            const emptyTrace0 = {
+                x: [],
+                y: [],
+                mode: 'lines+markers',
+                name: 'Sensor 0',
+                line: { color: '#3498db', width: 2 },
+                marker: { size: 6 }
+            };
+
+            const emptyTrace1 = {
+                x: [],
+                y: [],
+                mode: 'lines+markers',
+                name: 'Sensor 1',
+                line: { color: '#e74c3c', width: 2 },
+                marker: { size: 6 }
+            };
+
+            // Set y-axis titles for each chart
+            const chartTitles = {
+                'ch4-chart': 'CH4 [% LEL]',
+                'co-chart': 'CO [ppm]',
+                'o2-chart': 'O2 [%]',
+                'co2-chart': 'CO2 [ppm]',
+                'no2-chart': 'NO2 [ppm]'
+            };
+
+            for (const chartId in chartTitles) {
+                const layout = JSON.parse(JSON.stringify(emptyLayout));
+                layout.yaxis.title = chartTitles[chartId];
+                Plotly.newPlot(chartId, [emptyTrace0, emptyTrace1], layout);
+            }
+        }
+
+        function connectToSSE() {
+            eventSource = new EventSource('http://localhost:8000/api/air_data');
+
+
+            eventSource.addEventListener('air_data', function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    updateCharts(data);
+                    document.getElementById('file-info').textContent = `Realtime data received at ${new Date().toLocaleTimeString()}`;
+                } catch (error) {
+                    console.error('Error parsing SSE data:', error);
+                }
+            });
+
+            eventSource.onerror = function (e) {
+                console.log('EventSource error:', e);
+                alert("Error occurred: " + (e.message || "Check console for details"));
+                document.getElementById('realtimeBtn').classList.remove('active');
+                document.getElementById('realtimeBtn').textContent = 'Realtime Data';
+                document.getElementById('file-info').textContent = 'Error connecting to Realtime Data Server';
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            };
+        }
+
+        function updateCharts(data) {
+            const timestamp = new Date(data.timestamp);
+            const sensorId = data['sensor_id'];
+            const sensorKey = sensorId === 0 ? 'sensor0' : 'sensor1';
+
+            // Update CH4 chart
+            if (data['CH4 [% LEL]'] !== undefined) {
+                chartData['ch4-chart'][sensorKey].x.push(timestamp);
+                chartData['ch4-chart'][sensorKey].y.push(data['CH4 [% LEL]']);
+                updateChart('ch4-chart', sensorKey);
+            }
+
+            // Update CO chart
+            if (data['CO [ppm]'] !== undefined) {
+                chartData['co-chart'][sensorKey].x.push(timestamp);
+                chartData['co-chart'][sensorKey].y.push(data['CO [ppm]']);
+                updateChart('co-chart', sensorKey);
+            }
+
+            // Update O2 chart
+            if (data['O2 [%]'] !== undefined) {
+                chartData['o2-chart'][sensorKey].x.push(timestamp);
+                chartData['o2-chart'][sensorKey].y.push(data['O2 [%]']);
+                updateChart('o2-chart', sensorKey);
+            }
+
+            // Update CO2 chart
+            if (data['CO2 [ppm]'] !== undefined) {
+                chartData['co2-chart'][sensorKey].x.push(timestamp);
+                chartData['co2-chart'][sensorKey].y.push(data['CO2 [ppm]']);
+                updateChart('co2-chart', sensorKey);
+            }
+
+            // Update NO2 chart
+            if (data['NO2 [ppm]'] !== undefined) {
+                chartData['no2-chart'][sensorKey].x.push(timestamp);
+                chartData['no2-chart'][sensorKey].y.push(data['NO2 [ppm]']);
+                updateChart('no2-chart', sensorKey);
+            }
+        }
+
+        function updateChart(chartId, sensorKey) {
+            const traceIndex = sensorKey === 'sensor0' ? 0 : 1;
+            const update = {
+                x: [chartData[chartId][sensorKey].x],
+                y: [chartData[chartId][sensorKey].y]
+            };
+
+            Plotly.restyle(chartId, update, traceIndex);
+
+            // Auto-range the x-axis to show most recent data
+            const xaxis = {
+                autorange: true,
+                range: getXAxisRange(chartData[chartId])
+            };
+
+            Plotly.relayout(chartId, { xaxis: xaxis });
+        }
+
+        function getXAxisRange(data) {
+            // Combine all timestamps from both sensors
+            const allTimestamps = [...data.sensor0.x, ...data.sensor1.x];
+            if (allTimestamps.length === 0) return [null, null];
+
+            // Sort timestamps
+            allTimestamps.sort((a, b) => a - b);
+
+            // Get min and max
+            const minTime = allTimestamps[0];
+            const maxTime = allTimestamps[allTimestamps.length - 1];
+
+            // Add some padding (10% of total time range)
+            const range = maxTime - minTime;
+            const padding = range * 0.1;
+
+            return [minTime - padding, maxTime + padding];
+        }
+
         function createDashboard(data) {
             if (!Array.isArray(data)) {
                 alert('Invalid data format. Expected an array of measurements.');
                 return;
             }
+
+            // Clear existing charts first
+            const chartContainers = ['ch4-chart', 'co-chart', 'o2-chart', 'co2-chart', 'no2-chart'];
+            chartContainers.forEach(id => {
+                Plotly.purge(id);
+            });
 
             // Separate data by sensor_id and extract timestamps
             const sensor0Data = data.filter(item => item['sensor_id'] === 0);
@@ -332,7 +588,7 @@
                     type: 'date',
                     gridcolor: '#f0f0f0',
                     linecolor: '#ddd',
-                    tickformat: '%H:%M:%S' // Show hours:minutes:seconds
+                    tickformat: '%H:%M:%S'
                 },
                 yaxis: {
                     title: title,
@@ -346,7 +602,7 @@
                     orientation: 'h',
                     y: 1.1
                 },
-                hovermode: 'x unified' // Show all values at the same x position
+                hovermode: 'x unified'
             };
 
             Plotly.newPlot(containerId, [trace0, trace1], layout);

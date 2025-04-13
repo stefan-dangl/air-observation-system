@@ -9,7 +9,6 @@ app = FastAPI()
 async def air_data():
     """SSE endpoint for air quality data"""
     return StreamingResponse(
-        # air_data_generator(),
         air_data_receiver(),
         media_type="text/event-stream",
         headers={

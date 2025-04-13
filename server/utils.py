@@ -5,7 +5,7 @@ import serial
 import json
 
 SERIAL_PORT = '/dev/ttyACM0'
-STORAGE_PATH = '../stored_data/stored_data.csv'
+STORAGE_PATH = 'stored_data/stored_data.csv'
 BAUDRATE = 9600
 
 def parse_sensor_data(data_str):
@@ -37,10 +37,10 @@ async def air_data_receiver():
 
     try:
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1)
-        print(f"Connected to {SERIAL_PORT} at {BAUDRATE} baud.")
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
 
-        # open database
-        # if csv is empty, write header to it
+        print(f"Connected to {SERIAL_PORT} at {BAUDRATE} baud.")
 
         while True:
             if ser.in_waiting > 0:
@@ -50,7 +50,11 @@ async def air_data_receiver():
                 line = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + line
                 print(f"Raw data: {line}")
 
-                # TODO: Store data to csv
+                with open(STORAGE_PATH, 'a+') as file:  # Use 'a+' mode to read and append
+                    file.seek(0)  # Move to start of file for reading
+                    if file.read().strip() == '':
+                        file.write("timestamp;sensor_id;CH4 [% LEL];CO [ppm];O2 [%];CO2 [ppm];NO2 [ppm]\n")
+                    file.write(line + "\n")
 
                 # Parse the data
                 sensor_data = parse_sensor_data(line)
@@ -60,6 +64,8 @@ async def air_data_receiver():
 
 
                 await asyncio.sleep(0.1)  # Send data every second
+
+
 
     except serial.SerialException as e:
         print(f"Serial error: {e}")

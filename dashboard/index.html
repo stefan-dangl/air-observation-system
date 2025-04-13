@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Air Measurement Dashboard</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -218,8 +219,8 @@
             <h3>Please select</h3>
             <div class="button-container">
                 <div class="file-input-wrapper">
-                    <input type="file" id="fileInput" accept=".json">
-                    <label for="fileInput" class="file-input-label">Choose JSON File</label>
+                    <input type="file" id="fileInput" accept=".csv,.txt">
+                    <label for="fileInput" class="file-input-label">Choose CSV File</label>
                 </div>
                 <button id="realtimeBtn" class="realtime-button">Realtime Data</button>
             </div>
@@ -256,8 +257,9 @@
         <section id="about" class="about-section">
             <h2>About This Dashboard</h2>
             <p>This interactive dashboard visualizes air quality measurements from multiple sensors with timestamps. It
-                supports JSON data files with measurements for CH4, CO, O2, CO2, and NO2 from two sensors (sensor_id 0
+                supports CSV data files with measurements for CH4, CO, O2, CO2, and NO2 from two sensors (sensor_id 0
                 and 1).</p>
+            <p>Expected CSV format: timestamp,sensor_id,CH4 [% LEL],CO [ppm],O2 [%],CO2 [ppm],NO2 [ppm]</p>
         </section>
 
         <footer>
@@ -299,17 +301,37 @@
                 chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
             }
 
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    createDashboard(data);
-                } catch (error) {
-                    alert('Error parsing JSON file: ' + error.message);
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function (results) {
+                    if (results.errors.length > 0) {
+                        console.warn('CSV parsing errors:', results.errors);
+                    }
+                    processCSVData(results.data);
+                },
+                error: function (error) {
+                    alert('Error parsing CSV file: ' + error.message);
                 }
-            };
-            reader.readAsText(file);
+            });
         });
+
+        function processCSVData(csvData) {
+            // Convert CSV data to the format expected by createDashboard
+            const formattedData = csvData.map(row => {
+                return {
+                    timestamp: row.timestamp,
+                    sensor_id: row.sensor_id,
+                    'CH4 [% LEL]': row['CH4 [% LEL]'],
+                    'CO [ppm]': row['CO [ppm]'],
+                    'O2 [%]': row['O2 [%]'],
+                    'CO2 [ppm]': row['CO2 [ppm]'],
+                    'NO2 [ppm]': row['NO2 [ppm]']
+                };
+            });
+
+            createDashboard(formattedData);
+        }
 
         document.getElementById('realtimeBtn').addEventListener('click', function () {
             const button = this;
@@ -402,7 +424,6 @@
 
         function connectToSSE() {
             eventSource = new EventSource('http://localhost:8000/api/air_data');
-
 
             eventSource.addEventListener('air_data', function (event) {
                 try {

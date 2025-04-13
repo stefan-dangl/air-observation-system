@@ -1,8 +1,11 @@
+import asyncio
+import json
+from datetime import datetime
 import serial
 import json
 
-# UART Configuration
 SERIAL_PORT = '/dev/ttyACM0'
+STORAGE_PATH = '../stored_data/stored_data.csv'
 BAUDRATE = 9600
 
 def parse_sensor_data(data_str):
@@ -11,40 +14,52 @@ def parse_sensor_data(data_str):
         # Split the string by semicolons
         parts = data_str.strip().split(';')
 
-        if len(parts) != 6:
-            raise ValueError("Invalid data format. Expected 6 values separated by ';'.")
+        if len(parts) != 7:
+            raise ValueError("Invalid data format. Expected 7 values separated by ';'.")
 
         # Convert and assign to structured fields
         sensor_data = {
-            "sensor_id": int(parts[0]),
-            "CH4 [% LEL]": float(parts[1]),
-            "CO [ppm]": float(parts[2]),
-            "O2 [%]": float(parts[3]),
-            "CO2 [ppm]": float(parts[4]),
-            "NO2 [ppm]": float(parts[5])
+            "timestamp": parts[0],
+            "sensor_id": int(parts[1]),
+            "CH4 [% LEL]": float(parts[2]),
+            "CO [ppm]": float(parts[3]),
+            "O2 [%]": float(parts[4]),
+            "CO2 [ppm]": float(parts[5]),
+            "NO2 [ppm]": float(parts[6])
         }
         return sensor_data
     except (ValueError, IndexError) as e:
         print(f"Error parsing data: {e}")
         return None
 
-def main():
-    # Initialize serial connection
+async def air_data_receiver():
+    """Generator that yields air data as SSE events"""
+
     try:
         ser = serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1)
         print(f"Connected to {SERIAL_PORT} at {BAUDRATE} baud.")
+
+        # open database
+        # if csv is empty, write header to it
 
         while True:
             if ser.in_waiting > 0:
                 # Read a line from serial
                 line = ser.readline().decode('utf-8').strip()
+
+                line = datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ";" + line
                 print(f"Raw data: {line}")
+
+                # TODO: Store data to csv
 
                 # Parse the data
                 sensor_data = parse_sensor_data(line)
                 if sensor_data:
                     # Print as JSON for readability
-                    print(json.dumps(sensor_data, indent=4))
+                    yield f"event: air_data\ndata: {json.dumps(sensor_data)}\n\n"
+
+
+                await asyncio.sleep(0.1)  # Send data every second
 
     except serial.SerialException as e:
         print(f"Serial error: {e}")
@@ -53,6 +68,3 @@ def main():
     finally:
         if 'ser' in locals() and ser.is_open:
             ser.close()
-
-if __name__ == "__main__":
-    main()

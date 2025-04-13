@@ -97,7 +97,7 @@ void ledStripExample(){
 void sendDummyData(int sensor_id){
 
   char buffer[100];
-  sprintf(buffer, "%i;%i.23;%i.34;%i.45;%i.56;%i.67", sensor_id, sensor_id, sensor_id, sensor_id, sensor_id, sensor_id);
+  sprintf(buffer, "0;%i.23;%i.34;%i.45;%i.56;%i.67", sensor_id, sensor_id, sensor_id, sensor_id, sensor_id, sensor_id);
   Serial.println(buffer);
 }
 

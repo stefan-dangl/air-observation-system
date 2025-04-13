@@ -23,7 +23,6 @@ void setup() {
 }
 
 void loop() {
-  ledStripExample();
 
   // unsigned long currentMillis = millis();
   // displaySelectedSensor(displayedSensor);
@@ -40,6 +39,10 @@ void loop() {
   //     // check if led strip has to be adapted
   // }
 
+  for (int i = 0; i < 100; i++){
+    sendDummyData(i);
+    delay(1000); 
+  }
 }
 
 void slecetDisplayedSensor(unsigned long currentMillis){
@@ -89,6 +92,13 @@ void ledStripExample(){
   resetLedStrip(1);
   setLedStrip(2, ledStrip.Color(0,   0,   255));
   delay(1000);
+}
+
+void sendDummyData(int sensor_id){
+
+  char buffer[100];
+  sprintf(buffer, "%i;%i.23;%i.34;%i.45;%i.56;%i.67", sensor_id, sensor_id, sensor_id, sensor_id, sensor_id, sensor_id);
+  Serial.println(buffer);
 }
 
 // --- examples end ---

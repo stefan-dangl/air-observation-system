@@ -1,5 +1,7 @@
 # air-observation-system
 
+... under construction ...
+
 An Arduino-based air quality monitoring system for gas detection. Since my apartment uses gas for water heating and cooking, this project tracks gas concentration levels for both statistical analysis and safety purposes.
 
 Project Components:

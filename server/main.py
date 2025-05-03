@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from utils import air_data_receiver
 import uvicorn
 
 app = FastAPI()
+app.mount("/", StaticFiles(directory="../dashboard", html=True), name="static")
 
 @app.get("/api/air_data")
 async def air_data():

@@ -24,25 +24,29 @@ void setup() {
 
 void loop() {
 
-  // unsigned long currentMillis = millis();
-  // displaySelectedSensor(displayedSensor);
-  // slecetDisplayedSensor(currentMillis);
+  unsigned long currentMillis = millis();
+  displaySelectedSensor(displayedSensor);
+  slecetDisplayedSensor(currentMillis);
 
-  // if (currentMillis - previousMillisSensorPoll >= intervalSensorPoll) {
-  //   previousMillisSensorPoll = currentMillis;
-  //   // cache current sensor values
+  resetLedStrip(NUMBER_OF_SENSORS);
+  setLedStrip(0, ledStrip.Color(255,   255,   0));
+  setLedStrip(1, ledStrip.Color(0,   255,   0));
 
-  //   // pollSensor();
+  if (currentMillis - previousMillisSensorPoll >= intervalSensorPoll) {
+    previousMillisSensorPoll = currentMillis;
+    // cache current sensor values
+
+    // pollSensor();
  
-  //   // check if sensor value changed
-  //     // send via serial
-  //     // check if led strip has to be adapted
-  // }
-
-  for (int i = 0; i < 100; i++){
-    sendDummyData(i);
-    delay(1000); 
+    // check if sensor value changed
+      // send via serial
+      // check if led strip has to be adapted
   }
+
+  // for (int i = 0; i < 100; i++){
+  //   sendDummyData(i);
+  //   delay(1000); 
+  // }
 }
 
 void slecetDisplayedSensor(unsigned long currentMillis){

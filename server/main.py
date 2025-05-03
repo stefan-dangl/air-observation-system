@@ -9,7 +9,7 @@ app = FastAPI()
 async def air_data():
     """SSE endpoint for air quality data"""
     return StreamingResponse(
-        air_data_receiver(),
+        serial_receiver,
         media_type="text/event-stream",
         headers={
             "Access-Control-Allow-Origin": "*",
@@ -19,4 +19,5 @@ async def air_data():
     )
 
 if __name__ == "__main__":
+    serial_receiver = air_data_receiver()
     uvicorn.run(app, host="0.0.0.0", port=8000)

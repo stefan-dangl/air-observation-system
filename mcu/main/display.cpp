@@ -15,9 +15,9 @@ void displaySelectedSensor(int8_t sensor_id){
 
   sprintf(serial_output + strlen(serial_output), "%d", sensor_id + 1);
   sprintf(serial_output + strlen(serial_output), ".");
+  sprintf(serial_output + strlen(serial_output), "5");
   sprintf(serial_output + strlen(serial_output), "1");
-  sprintf(serial_output + strlen(serial_output), "2");
-  sprintf(serial_output + strlen(serial_output), "3");
+  sprintf(serial_output + strlen(serial_output), "9");
 
   sevseg.blank();
   sevseg.setChars(serial_output);

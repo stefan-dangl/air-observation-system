@@ -32,6 +32,7 @@ def parse_sensor_data(data_str):
         print(f"Error parsing data: {e}")
         return None
 
+
 async def air_data_receiver():
     """Generator that yields air data as SSE events"""
 
@@ -64,8 +65,6 @@ async def air_data_receiver():
 
 
                 await asyncio.sleep(0.1)  # Send data every second
-
-
 
     except serial.SerialException as e:
         print(f"Serial error: {e}")

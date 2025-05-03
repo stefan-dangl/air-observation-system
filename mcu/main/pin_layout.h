@@ -1,4 +1,4 @@
-#define LED_STRIP_PIN   PC5
+#define LED_STRIP_PIN PC5
 
 #define BUTTON_1 PC8
 #define BUTTON_2 PC6

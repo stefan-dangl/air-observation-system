@@ -5,7 +5,7 @@ import serial
 import json
 
 SERIAL_PORT = '/dev/ttyACM0'
-STORAGE_PATH = 'stored_data/stored_data.csv'
+STORAGE_PATH = '../stored_data/stored_data.csv'
 BAUDRATE = 9600
 
 def parse_sensor_data(data_str):
@@ -14,18 +14,15 @@ def parse_sensor_data(data_str):
         # Split the string by semicolons
         parts = data_str.strip().split(';')
 
-        if len(parts) != 7:
-            raise ValueError("Invalid data format. Expected 7 values separated by ';'.")
+        if len(parts) != 4:
+            raise ValueError("Invalid data format. Expected 4 values separated by ';'.")
 
         # Convert and assign to structured fields
         sensor_data = {
             "timestamp": parts[0],
             "sensor_id": int(parts[1]),
-            "CH4 [% LEL]": float(parts[2]),
-            "CO [ppm]": float(parts[3]),
-            "O2 [%]": float(parts[4]),
-            "CO2 [ppm]": float(parts[5]),
-            "NO2 [ppm]": float(parts[6])
+            "CO2 [ppm]": float(parts[2]),
+            "CH4 [% LEL]": float(parts[3]),
         }
         return sensor_data
     except (ValueError, IndexError) as e:
@@ -54,7 +51,7 @@ async def air_data_receiver():
                 with open(STORAGE_PATH, 'a+') as file:  # Use 'a+' mode to read and append
                     file.seek(0)  # Move to start of file for reading
                     if file.read().strip() == '':
-                        file.write("timestamp;sensor_id;CH4 [% LEL];CO [ppm];O2 [%];CO2 [ppm];NO2 [ppm]\n")
+                        file.write("timestamp;sensor_id;CO2 [ppm];CH4 [% LEL]\n")
                     file.write(line + "\n")
 
                 # Parse the data

@@ -211,8 +211,8 @@
 
         <section class="intro">
             <h2>Interactive Air Measurement Visualization</h2>
-            <p>Upload your sensor data to generate real-time visualizations of CH4, CO, O2, CO2, and NO2 measurements
-                from multiple sensors.</p>
+            <p>Connect to the server for real-time visualizations of CO2 and CH4 measurements, or load a CSV file to
+                display past data.</p>
         </section>
 
         <section id="upload" class="upload-section">
@@ -229,37 +229,21 @@
 
         <section id="dashboard" class="dashboard-grid">
             <div class="chart-card">
-                <h3>CH4 [% LEL]</h3>
-                <div id="ch4-chart" class="chart-container"></div>
-            </div>
-
-            <div class="chart-card">
-                <h3>CO [ppm]</h3>
-                <div id="co-chart" class="chart-container"></div>
-            </div>
-
-            <div class="chart-card">
-                <h3>O2 [%]</h3>
-                <div id="o2-chart" class="chart-container"></div>
-            </div>
-
-            <div class="chart-card">
                 <h3>CO2 [ppm]</h3>
                 <div id="co2-chart" class="chart-container"></div>
             </div>
 
             <div class="chart-card">
-                <h3>NO2 [ppm]</h3>
-                <div id="no2-chart" class="chart-container"></div>
+                <h3>CH4 [% LEL]</h3>
+                <div id="ch4-chart" class="chart-container"></div>
             </div>
         </section>
 
         <section id="about" class="about-section">
             <h2>About This Dashboard</h2>
-            <p>This interactive dashboard visualizes air quality measurements from multiple sensors with timestamps. It
-                supports CSV data files with measurements for CH4, CO, O2, CO2, and NO2 from two sensors (sensor_id 0
-                and 1).</p>
-            <p>Expected CSV format: timestamp,sensor_id,CH4 [% LEL],CO [ppm],O2 [%],CO2 [ppm],NO2 [ppm]</p>
+            <p>This interactive dashboard visualizes air quality measurements from multiple CO2 (Carbon-Dioxide) and CH4
+                (Methane) sensors.</p>
+            <p>Expected CSV format: YYYY-MM-DD HH:MM:SS;sensor_id;CO2 [ppm];CH4 [% LEL]</p>
         </section>
 
         <footer>
@@ -270,11 +254,8 @@
     <script>
         // Store chart data for realtime updates
         const chartData = {
-            'ch4-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
-            'co-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
-            'o2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
             'co2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
-            'no2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } }
+            'ch4-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } }
         };
 
         let eventSource = null;
@@ -322,11 +303,8 @@
                 return {
                     timestamp: row.timestamp,
                     sensor_id: row.sensor_id,
-                    'CH4 [% LEL]': row['CH4 [% LEL]'],
-                    'CO [ppm]': row['CO [ppm]'],
-                    'O2 [%]': row['O2 [%]'],
                     'CO2 [ppm]': row['CO2 [ppm]'],
-                    'NO2 [ppm]': row['NO2 [ppm]']
+                    'CH4 [% LEL]': row['CH4 [% LEL]']
                 };
             });
 
@@ -408,11 +386,8 @@
 
             // Set y-axis titles for each chart
             const chartTitles = {
-                'ch4-chart': 'CH4 [% LEL]',
-                'co-chart': 'CO [ppm]',
-                'o2-chart': 'O2 [%]',
                 'co2-chart': 'CO2 [ppm]',
-                'no2-chart': 'NO2 [ppm]'
+                'ch4-chart': 'CH4 [% LEL]'
             };
 
             for (const chartId in chartTitles) {
@@ -453,27 +428,6 @@
             const sensorId = data['sensor_id'];
             const sensorKey = sensorId === 0 ? 'sensor0' : 'sensor1';
 
-            // Update CH4 chart
-            if (data['CH4 [% LEL]'] !== undefined) {
-                chartData['ch4-chart'][sensorKey].x.push(timestamp);
-                chartData['ch4-chart'][sensorKey].y.push(data['CH4 [% LEL]']);
-                updateChart('ch4-chart', sensorKey);
-            }
-
-            // Update CO chart
-            if (data['CO [ppm]'] !== undefined) {
-                chartData['co-chart'][sensorKey].x.push(timestamp);
-                chartData['co-chart'][sensorKey].y.push(data['CO [ppm]']);
-                updateChart('co-chart', sensorKey);
-            }
-
-            // Update O2 chart
-            if (data['O2 [%]'] !== undefined) {
-                chartData['o2-chart'][sensorKey].x.push(timestamp);
-                chartData['o2-chart'][sensorKey].y.push(data['O2 [%]']);
-                updateChart('o2-chart', sensorKey);
-            }
-
             // Update CO2 chart
             if (data['CO2 [ppm]'] !== undefined) {
                 chartData['co2-chart'][sensorKey].x.push(timestamp);
@@ -481,11 +435,11 @@
                 updateChart('co2-chart', sensorKey);
             }
 
-            // Update NO2 chart
-            if (data['NO2 [ppm]'] !== undefined) {
-                chartData['no2-chart'][sensorKey].x.push(timestamp);
-                chartData['no2-chart'][sensorKey].y.push(data['NO2 [ppm]']);
-                updateChart('no2-chart', sensorKey);
+            // Update CH4 chart
+            if (data['CH4 [% LEL]'] !== undefined) {
+                chartData['ch4-chart'][sensorKey].x.push(timestamp);
+                chartData['ch4-chart'][sensorKey].y.push(data['CH4 [% LEL]']);
+                updateChart('ch4-chart', sensorKey);
             }
         }
 
@@ -533,7 +487,7 @@
             }
 
             // Clear existing charts first
-            const chartContainers = ['ch4-chart', 'co-chart', 'o2-chart', 'co2-chart', 'no2-chart'];
+            const chartContainers = ['co2-chart', 'ch4-chart'];
             chartContainers.forEach(id => {
                 Plotly.purge(id);
             });
@@ -548,27 +502,6 @@
 
             // Create traces for each chart
             createChart(
-                'ch4-chart',
-                'CH4 [% LEL]',
-                timestamps0, sensor0Data.map(item => item['CH4 [% LEL]']),
-                timestamps1, sensor1Data.map(item => item['CH4 [% LEL]'])
-            );
-
-            createChart(
-                'co-chart',
-                'CO [ppm]',
-                timestamps0, sensor0Data.map(item => item['CO [ppm]']),
-                timestamps1, sensor1Data.map(item => item['CO [ppm]'])
-            );
-
-            createChart(
-                'o2-chart',
-                'O2 [%]',
-                timestamps0, sensor0Data.map(item => item['O2 [%]']),
-                timestamps1, sensor1Data.map(item => item['O2 [%]'])
-            );
-
-            createChart(
                 'co2-chart',
                 'CO2 [ppm]',
                 timestamps0, sensor0Data.map(item => item['CO2 [ppm]']),
@@ -576,10 +509,10 @@
             );
 
             createChart(
-                'no2-chart',
-                'NO2 [ppm]',
-                timestamps0, sensor0Data.map(item => item['NO2 [ppm]']),
-                timestamps1, sensor1Data.map(item => item['NO2 [ppm]'])
+                'ch4-chart',
+                'CH4 [% LEL]',
+                timestamps0, sensor0Data.map(item => item['CH4 [% LEL]']),
+                timestamps1, sensor1Data.map(item => item['CH4 [% LEL]'])
             );
         }
 

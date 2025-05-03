@@ -6,7 +6,8 @@
 #endif
 
 void ledStripInit();
-void setLedStrip(int led_id, uint32_t color);
-void resetLedStrip(int i);
+void resetAllLeds();
+void displayLevel(int sensor_index, int level);
 
 extern Adafruit_NeoPixel ledStrip;
+

@@ -20,4 +20,7 @@ void pin_setup(){
   pinMode(SEGMENT_F, OUTPUT);
   pinMode(SEGMENT_G, OUTPUT);
   pinMode(SEGMENT_P, OUTPUT);
+
+  pinMode(PIN_MQ135_0, INPUT);
+  pinMode(PIN_MQ135_1, INPUT);
 }

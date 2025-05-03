@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Measurement Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --realtime-color: #27ae60;
+            --background-color: #f9f9f9;
+            --text-color: #333;
+            --light-text: #777;
+            --card-bg: #fff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 40px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--secondary-color);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--primary-color);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .intro p {
+            font-size: 1.2rem;
+            color: var(--light-text);
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .upload-section {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label,
+        .realtime-button {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .file-input-label {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .file-input-label:hover {
+            background-color: #2980b9;
+        }
+
+        .realtime-button {
+            background-color: var(--realtime-color);
+            color: white;
+        }
+
+        .realtime-button:hover {
+            background-color: #219955;
+        }
+
+        .realtime-button.active {
+            background-color: #e74c3c;
+        }
+
+        #file-info {
+            color: var(--light-text);
+            font-style: italic;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            border-top: 1px solid #eee;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Air Quality Dashboard</h1>
+            <nav>
+                <ul>
+                    <li><a href="#upload">Upload</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <section class="intro">
+            <h2>Interactive Air Measurement Visualization</h2>
+            <p>Connect to the server for real-time visualizations of CO2 and CH4 measurements, or load a CSV file to
+                display past data.</p>
+        </section>
+
+        <section id="upload" class="upload-section">
+            <h3>Please select</h3>
+            <div class="button-container">
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" accept=".csv,.txt">
+                    <label for="fileInput" class="file-input-label">Choose CSV File</label>
+                </div>
+                <button id="realtimeBtn" class="realtime-button">Realtime Data</button>
+            </div>
+            <p id="file-info">No file selected</p>
+        </section>
+
+        <section id="dashboard" class="dashboard-grid">
+            <div class="chart-card">
+                <h3>CO2 [ppm]</h3>
+                <div id="co2-chart" class="chart-container"></div>
+            </div>
+
+            <div class="chart-card">
+                <h3>CH4 [% LEL]</h3>
+                <div id="ch4-chart" class="chart-container"></div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <h2>About This Dashboard</h2>
+            <p>This interactive dashboard visualizes air quality measurements from multiple CO2 (Carbon-Dioxide) and CH4
+                (Methane) sensors.</p>
+            <p>Expected CSV format: YYYY-MM-DD HH:MM:SS;sensor_id;CO2 [ppm];CH4 [% LEL]</p>
+        </section>
+
+        <footer>
+            <p>© 2025 Stefan Dangl, MSc. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Store chart data for realtime updates
+        const chartData = {
+            'co2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
+            'ch4-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } }
+        };
+
+        let eventSource = null;
+
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Stop realtime data if active
+            const realtimeBtn = document.getElementById('realtimeBtn');
+            if (realtimeBtn.classList.contains('active')) {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                realtimeBtn.classList.remove('active');
+                realtimeBtn.textContent = 'Realtime Data';
+            }
+
+            document.getElementById('file-info').textContent = `Selected file: ${file.name}`;
+
+            // Reset chart data
+            for (const chartId in chartData) {
+                chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
+            }
+
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                complete: function (results) {
+                    if (results.errors.length > 0) {
+                        console.warn('CSV parsing errors:', results.errors);
+                    }
+                    processCSVData(results.data);
+                },
+                error: function (error) {
+                    alert('Error parsing CSV file: ' + error.message);
+                }
+            });
+        });
+
+        function processCSVData(csvData) {
+            // Convert CSV data to the format expected by createDashboard
+            const formattedData = csvData.map(row => {
+                return {
+                    timestamp: row.timestamp,
+                    sensor_id: row.sensor_id,
+                    'CO2 [ppm]': row['CO2 [ppm]'],
+                    'CH4 [% LEL]': row['CH4 [% LEL]']
+                };
+            });
+
+            createDashboard(formattedData);
+        }
+
+        document.getElementById('realtimeBtn').addEventListener('click', function () {
+            const button = this;
+            if (button.classList.contains('active')) {
+                // Stop realtime updates
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+                button.classList.remove('active');
+                button.textContent = 'Realtime Data';
+                document.getElementById('file-info').textContent = 'Realtime data stopped';
+            } else {
+                // Start realtime updates
+                button.classList.add('active');
+                button.textContent = 'Stop Realtime';
+                document.getElementById('file-info').textContent = 'Loading realtime data...';
+
+                // Clear existing chart data
+                for (const chartId in chartData) {
+                    chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
+                }
+
+                // Initialize empty charts
+                initializeEmptyCharts();
+
+                // Connect to SSE endpoint
+                connectToSSE();
+            }
+        });
+
+        function initializeEmptyCharts() {
+            const now = new Date();
+            const emptyLayout = {
+                title: '',
+                xaxis: {
+                    title: 'Time',
+                    type: 'date',
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd',
+                    tickformat: '%H:%M:%S'
+                },
+                yaxis: {
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd'
+                },
+                margin: { t: 10, l: 50, r: 30, b: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                },
+                hovermode: 'x unified'
+            };
+
+            const emptyTrace0 = {
+                x: [],
+                y: [],
+                mode: 'lines+markers',
+                name: 'Sensor 0',
+                line: { color: '#3498db', width: 2 },
+                marker: { size: 6 }
+            };
+
+            const emptyTrace1 = {
+                x: [],
+                y: [],
+                mode: 'lines+markers',
+                name: 'Sensor 1',
+                line: { color: '#e74c3c', width: 2 },
+                marker: { size: 6 }
+            };
+
+            // Set y-axis titles for each chart
+            const chartTitles = {
+                'co2-chart': 'CO2 [ppm]',
+                'ch4-chart': 'CH4 [% LEL]'
+            };
+
+            for (const chartId in chartTitles) {
+                const layout = JSON.parse(JSON.stringify(emptyLayout));
+                layout.yaxis.title = chartTitles[chartId];
+                Plotly.newPlot(chartId, [emptyTrace0, emptyTrace1], layout);
+            }
+        }
+
+        function connectToSSE() {
+            eventSource = new EventSource('http://localhost:8000/api/air_data');
+
+            eventSource.addEventListener('air_data', function (event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    updateCharts(data);
+                    document.getElementById('file-info').textContent = `Realtime data received at ${new Date().toLocaleTimeString()}`;
+                } catch (error) {
+                    console.error('Error parsing SSE data:', error);
+                }
+            });
+
+            eventSource.onerror = function (e) {
+                console.log('EventSource error:', e);
+                alert("Error occurred: " + (e.message || "Check console for details"));
+                document.getElementById('realtimeBtn').classList.remove('active');
+                document.getElementById('realtimeBtn').textContent = 'Realtime Data';
+                document.getElementById('file-info').textContent = 'Error connecting to Realtime Data Server';
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                }
+            };
+        }
+
+        function updateCharts(data) {
+            const timestamp = new Date(data.timestamp);
+            const sensorId = data['sensor_id'];
+            const sensorKey = sensorId === 0 ? 'sensor0' : 'sensor1';
+
+            // Update CO2 chart
+            if (data['CO2 [ppm]'] !== undefined) {
+                chartData['co2-chart'][sensorKey].x.push(timestamp);
+                chartData['co2-chart'][sensorKey].y.push(data['CO2 [ppm]']);
+                updateChart('co2-chart', sensorKey);
+            }
+
+            // Update CH4 chart
+            if (data['CH4 [% LEL]'] !== undefined) {
+                chartData['ch4-chart'][sensorKey].x.push(timestamp);
+                chartData['ch4-chart'][sensorKey].y.push(data['CH4 [% LEL]']);
+                updateChart('ch4-chart', sensorKey);
+            }
+        }
+
+        function updateChart(chartId, sensorKey) {
+            const traceIndex = sensorKey === 'sensor0' ? 0 : 1;
+            const update = {
+                x: [chartData[chartId][sensorKey].x],
+                y: [chartData[chartId][sensorKey].y]
+            };
+
+            Plotly.restyle(chartId, update, traceIndex);
+
+            // Auto-range the x-axis to show most recent data
+            const xaxis = {
+                autorange: true,
+                range: getXAxisRange(chartData[chartId])
+            };
+
+            Plotly.relayout(chartId, { xaxis: xaxis });
+        }
+
+        function getXAxisRange(data) {
+            // Combine all timestamps from both sensors
+            const allTimestamps = [...data.sensor0.x, ...data.sensor1.x];
+            if (allTimestamps.length === 0) return [null, null];
+
+            // Sort timestamps
+            allTimestamps.sort((a, b) => a - b);
+
+            // Get min and max
+            const minTime = allTimestamps[0];
+            const maxTime = allTimestamps[allTimestamps.length - 1];
+
+            // Add some padding (10% of total time range)
+            const range = maxTime - minTime;
+            const padding = range * 0.1;
+
+            return [minTime - padding, maxTime + padding];
+        }
+
+        function createDashboard(data) {
+            if (!Array.isArray(data)) {
+                alert('Invalid data format. Expected an array of measurements.');
+                return;
+            }
+
+            // Clear existing charts first
+            const chartContainers = ['co2-chart', 'ch4-chart'];
+            chartContainers.forEach(id => {
+                Plotly.purge(id);
+            });
+
+            // Separate data by sensor_id and extract timestamps
+            const sensor0Data = data.filter(item => item['sensor_id'] === 0);
+            const sensor1Data = data.filter(item => item['sensor_id'] === 1);
+
+            // Extract timestamps and convert to Date objects
+            const timestamps0 = sensor0Data.map(item => new Date(item['timestamp']));
+            const timestamps1 = sensor1Data.map(item => new Date(item['timestamp']));
+
+            // Create traces for each chart
+            createChart(
+                'co2-chart',
+                'CO2 [ppm]',
+                timestamps0, sensor0Data.map(item => item['CO2 [ppm]']),
+                timestamps1, sensor1Data.map(item => item['CO2 [ppm]'])
+            );
+
+            createChart(
+                'ch4-chart',
+                'CH4 [% LEL]',
+                timestamps0, sensor0Data.map(item => item['CH4 [% LEL]']),
+                timestamps1, sensor1Data.map(item => item['CH4 [% LEL]'])
+            );
+        }
+
+        function createChart(containerId, title, x0, y0, x1, y1) {
+            const trace0 = {
+                x: x0,
+                y: y0,
+                mode: 'lines+markers',
+                name: 'Sensor 0',
+                line: { color: '#3498db', width: 2 },
+                marker: { size: 6 }
+            };
+
+            const trace1 = {
+                x: x1,
+                y: y1,
+                mode: 'lines+markers',
+                name: 'Sensor 1',
+                line: { color: '#e74c3c', width: 2 },
+                marker: { size: 6 }
+            };
+
+            const layout = {
+                title: '',
+                xaxis: {
+                    title: 'Time',
+                    type: 'date',
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd',
+                    tickformat: '%H:%M:%S'
+                },
+                yaxis: {
+                    title: title,
+                    gridcolor: '#f0f0f0',
+                    linecolor: '#ddd'
+                },
+                margin: { t: 10, l: 50, r: 30, b: 50 },
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                legend: {
+                    orientation: 'h',
+                    y: 1.1
+                },
+                hovermode: 'x unified'
+            };
+
+            Plotly.newPlot(containerId, [trace0, trace1], layout);
+        }
+    </script>
+</body>
+
+</html>

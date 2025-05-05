@@ -1,17 +1,21 @@
+from config import DASHBOARD_PATH
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-from fastapi.staticfiles import StaticFiles
-from utils import air_data_receiver
+from fastapi.responses import StreamingResponse, FileResponse
 import uvicorn
+from serial_interface import air_data_receiver
+
 
 app = FastAPI()
-app.mount("/", StaticFiles(directory="../dashboard", html=True), name="static")
+
+@app.get("/")
+async def get_dashboard():
+    return FileResponse(DASHBOARD_PATH)
 
 @app.get("/api/air_data")
-async def air_data():
+async def get_air_data():
     """SSE endpoint for air quality data"""
     return StreamingResponse(
-        serial_receiver,
+        air_data_receiver(),
         media_type="text/event-stream",
         headers={
             "Access-Control-Allow-Origin": "*",
@@ -21,5 +25,4 @@ async def air_data():
     )
 
 if __name__ == "__main__":
-    serial_receiver = air_data_receiver()
     uvicorn.run(app, host="0.0.0.0", port=8000)

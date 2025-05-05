@@ -1,3 +1,6 @@
 fastapi
 uvicorn
 pyserial
+
+# dev
+pytest

@@ -15,7 +15,7 @@ async def get_dashboard():
 async def get_air_data():
     """SSE endpoint for air quality data"""
     return StreamingResponse(
-        air_data_receiver(),
+        air_data_receiver,
         media_type="text/event-stream",
         headers={
             "Access-Control-Allow-Origin": "*",
@@ -25,4 +25,5 @@ async def get_air_data():
     )
 
 if __name__ == "__main__":
+    air_data_receiver = air_data_receiver()
     uvicorn.run(app, host="0.0.0.0", port=8000)

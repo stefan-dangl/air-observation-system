@@ -20,10 +20,11 @@ MQ-series sensors require proper preheating and calibration before reliable use.
 You can start the server as following:
 
 ```Bash
-python3 src/server/main.py
+cd src/server
+python3 main.py
 ```
 
-By default the server is hosted at port `8000`. The server receives the serial data sent by the MCU, stores it in an CSV-File and provides an HTTP-Endpoint forwarding the measurement data as Server Sent Events.
+The server receives the serial data sent by the MCU, stores it in an CSV-File and provides an HTTP-Endpoint forwarding the measurement data as Server Sent Events. By default the server is hosted at port `8000`. You can configure the server by modifying `src/server/config.py`.
 
 
 ### 3) Open Dashboard

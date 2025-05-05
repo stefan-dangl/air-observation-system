@@ -29,7 +29,7 @@ void displaySelectedSensor(int8_t sensor_id){
 }
 
 void setDisplayedSensorValue(float sensorValue){
-    if (sensorValue >= 0 && sensorValue < MAX_DISPLAYED_VALUE) {
+    if (sensorValue >= 0 && sensorValue <= MAX_DISPLAYED_VALUE) {
       int displayedInt = (int)sensorValue / DIVIDER;
       int displayIndex = NUMBER_OF_DISPLAY_DIGITS - 1;
 

@@ -1,42 +1,52 @@
-#include "led_strip.h"
+#include "pin_layout.h"
+#include <Adafruit_NeoPixel.h>
 
-Adafruit_NeoPixel ledStrip(NUMBER_OF_SENSORS, LED_STRIP_PIN, NEO_GRB + NEO_KHZ800);
+// --- constants, defines and global variables ---
+Adafruit_NeoPixel g_ledStrip(NUMBER_OF_SENSOR_GROUPS, LED_STRIP_PIN, NEO_GRB + NEO_KHZ800);
+// --- constants, defines and global variables end ---
 
-void ledStripInit(){
-  ledStrip.begin();           // INITIALIZE NeoPixel ledStrip object (REQUIRED)
-  ledStrip.show();            // Turn OFF all pixels ASAP
-  ledStrip.setBrightness(50); // Set BRIGHTNESS to about 1/5 (max = 255)
+void ledStripInit()
+{
+  g_ledStrip.begin();           // INITIALIZE NeoPixel ledStrip object (REQUIRED)
+  g_ledStrip.show();            // Turn OFF all pixels ASAP
+  g_ledStrip.setBrightness(50); // max = 255
 }
 
-void setLedStrip(int led_id, uint32_t color){
-  ledStrip.setPixelColor(led_id, color);
-  ledStrip.show();
+static void setLedStrip(int ledIndex, uint32_t color)
+{
+  g_ledStrip.setPixelColor(ledIndex, color);
+  g_ledStrip.show();
 }
 
-void resetLedStrip(int i){
-  ledStrip.setPixelColor(i, ledStrip.Color(0,   0,   0));
-  ledStrip.show();
+static void resetLedStrip(int ledIndex)
+{
+  g_ledStrip.setPixelColor(ledIndex, g_ledStrip.Color(0, 0, 0));
+  g_ledStrip.show();
 }
 
-void resetAllLeds(){
-  for (int i = 0; i < NUMBER_OF_SENSORS; i++){
+void resetAllLeds()
+{
+  for (int i = 0; i < NUMBER_OF_SENSOR_GROUPS; i++)
+  {
     resetLedStrip(i);
   }
 }
 
-void displayLevel(int sensor_index, int level){
-  switch(level){
-    case 0:
-      setLedStrip(sensor_index, ledStrip.Color(0,   255,   0));
-      break;
-    case 1:
-      setLedStrip(sensor_index, ledStrip.Color(255,   255,   0));
-      break;
-    case 2: 
-      setLedStrip(sensor_index, ledStrip.Color(255,   0,   0));
-      break;
-    default:
-      setLedStrip(sensor_index, ledStrip.Color(0,   0,   255));
+void displayLevel(int sensorIndex, int level)
+{
+  switch (level)
+  {
+  case 0:
+    setLedStrip(sensorIndex, g_ledStrip.Color(0, 255, 0));
+    break;
+  case 1:
+    setLedStrip(sensorIndex, g_ledStrip.Color(255, 255, 0));
+    break;
+  case 2:
+    setLedStrip(sensorIndex, g_ledStrip.Color(255, 0, 0));
+    break;
+  default:
+    setLedStrip(sensorIndex, g_ledStrip.Color(0, 0, 255));
   }
-  ledStrip.show();
+  g_ledStrip.show();
 }

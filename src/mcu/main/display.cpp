@@ -1,51 +1,58 @@
-#include "display.h"
+#include "pin_layout.h"
+#include <SevSeg.h>
 
-SevSeg sevseg; 
-char displayedSensorValue[3];
+// --- constants, defines and global variables ---
+#define NUMBER_OF_DISPLAY_DIGITS 3
+#define MAX_DISPLAYED_VALUE 10000 - 1
+#define DIVIDER 10
+
+SevSeg g_sevseg; 
+char g_displayedSensorValue[3];
+// --- constants, defines and global variables end ---
 
 void sevsegInit(){
   byte numDigits = 4;   
   byte digitPins[] = {DIGI1, DIGI2, DIGI3, DIGI4}; 
   byte segmentPins[] = {SEGMENT_A, SEGMENT_B, SEGMENT_C, SEGMENT_D, SEGMENT_E, SEGMENT_F, SEGMENT_G, SEGMENT_P};
-  sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins);
-  sevseg.setBrightness(0); 
+  g_sevseg.begin(COMMON_CATHODE, numDigits, digitPins, segmentPins);
+  g_sevseg.setBrightness(0); 
 }
 
-void displaySelectedSensor(int8_t sensor_id){
-  char digit_0[2] = {displayedSensorValue[0], '\0'};
-  char digit_1[2] = {displayedSensorValue[1], '\0'};
-  char digit_2[2] = {displayedSensorValue[2], '\0'};
+void displaySelectedSensor(int sensor_id){
+  char digit_0[2] = {g_displayedSensorValue[0], '\0'};
+  char digit_1[2] = {g_displayedSensorValue[1], '\0'};
+  char digit_2[2] = {g_displayedSensorValue[2], '\0'};
 
-  char serial_output[5] = "";
-  sprintf(serial_output + strlen(serial_output), "%d", sensor_id + 1);
-  sprintf(serial_output + strlen(serial_output), ".");
-  sprintf(serial_output + strlen(serial_output), digit_0);
-  sprintf(serial_output + strlen(serial_output), digit_1);
-  sprintf(serial_output + strlen(serial_output), digit_2);
+  char serialOutput[5] = "";
+  sprintf(serialOutput + strlen(serialOutput), "%d", sensor_id + 1);
+  sprintf(serialOutput + strlen(serialOutput), ".");
+  sprintf(serialOutput + strlen(serialOutput), digit_0);
+  sprintf(serialOutput + strlen(serialOutput), digit_1);
+  sprintf(serialOutput + strlen(serialOutput), digit_2);
 
-  sevseg.blank();
-  sevseg.setChars(serial_output);
-  sevseg.refreshDisplay();
+  g_sevseg.blank();
+  g_sevseg.setChars(serialOutput);
+  g_sevseg.refreshDisplay();
 }
 
 void setDisplayedSensorValue(float sensorValue){
     if (sensorValue >= 0 && sensorValue <= MAX_DISPLAYED_VALUE) {
-      int displayedInt = (int)sensorValue / DIVIDER;
+      int displayedNumber = (int)sensorValue / DIVIDER;
       int displayIndex = NUMBER_OF_DISPLAY_DIGITS - 1;
 
-      while (displayedInt > 0) {
-        displayedSensorValue[displayIndex] = (displayedInt % 10) + 48;
-        displayedInt /= 10;
+      while (displayedNumber > 0) {
+        g_displayedSensorValue[displayIndex] = (displayedNumber % 10) + '0';
+        displayedNumber /= 10;
         displayIndex -= 1;
       }
       while(displayIndex >= 0){
-        displayedSensorValue[displayIndex] = '0';
+        g_displayedSensorValue[displayIndex] = '0';
         displayIndex -= 1;
       }
 
     } else {
       for (int i = 0; i < NUMBER_OF_DISPLAY_DIGITS; i++){
-        displayedSensorValue[i] = '-';
+        g_displayedSensorValue[i] = '-';
       }
     }
   }

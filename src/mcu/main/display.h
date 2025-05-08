@@ -1,15 +1,3 @@
-#ifndef SevSeg
-  #include <SevSeg.h>
-#endif
-
-#ifndef DIGI1
-  #include "pin_layout.h"
-#endif
-
-#define NUMBER_OF_DISPLAY_DIGITS 3
-#define MAX_DISPLAYED_VALUE 999
-#define DIVIDER 1
-
 void sevsegInit();
-void displaySelectedSensor(int8_t sensor_id);
+void displaySelectedSensor(int sensorId);
 void setDisplayedSensorValue(float sensorValue);

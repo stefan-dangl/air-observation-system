@@ -7,7 +7,7 @@ An Arduino-based air quality monitoring system for gas detection. Since my apart
 ## How to run
 
 ### 1) Connect MCU
-This project is based on the **STM32F334 Nucleo Board** and utilizes the **Arduino** Framework. **MQ135** gas sensors are used for measuring CO2 and **MQ2** sensors for measuring CH4 (methane). In my case I'm using two sensor pairs (one installed in the bathroom and one in the kitchen). However, you can add as many sensors as you need. Additionally I'm using an **Adafruit NeoPixel** for showing the current CO2 level (normal, high, critical) and a **3641AS** seven segment display for outputting the current CO2 value. The seven segment display is limited to 4 digits. Accordingly, I'm using buttons to switch between the sensor pairs.
+This project is based on the **STM32F334 Nucleo Board** and utilizes the **Arduino** Framework. **MQ135** gas sensors are used for measuring CO2 and **MQ2** sensors for measuring CH4 (methane). In my case I'm using two sensor pairs (one installed in the bathroom and one in the kitchen). However, you can add as many sensors as you need. The sensor data is outputted via serial interface. Additionally I'm using an **Adafruit NeoPixel** for showing the current CO2 level (normal, high, critical) and a **3641AS** seven segment display for outputting the current CO2 value. The seven segment display is limited to 4 digits. Accordingly, I'm using buttons to switch between the sensor pairs.
 
 A circuit schematic showing how to connect the components will follow soon.
 

@@ -1,4 +1,4 @@
-#define NUMBER_OF_SENSORS 2
+#define NUMBER_OF_SENSOR_GROUPS 2
 
 // LED Strip
 #define LED_STRIP_PIN PC5
@@ -23,8 +23,10 @@
 #define SEGMENT_G PA7
 #define SEGMENT_P PA8
 
-// Sensor Input
+// Analogue Sensor Input
 #define PIN_MQ135_0 PC0
 #define PIN_MQ135_1 PC1
+#define PIN_MQ2_0 PB0
+#define PIN_MQ2_1 PA4
 
 void pin_setup();

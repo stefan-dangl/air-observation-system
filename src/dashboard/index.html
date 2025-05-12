@@ -210,7 +210,7 @@
         </header>
 
         <section class="intro">
-            <h2>Interactive Air Measurement Visualization</h2>
+            <h2>Air Measurement Visualization</h2>
             <p>Connect to the server for real-time visualizations of CO2 and CH4 measurements, or load a CSV file to
                 display past data.</p>
         </section>
@@ -252,19 +252,16 @@
     </div>
 
     <script>
-        // Store chart data for realtime updates
         const chartData = {
             'co2-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } },
             'ch4-chart': { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } }
         };
-
         let eventSource = null;
 
         document.getElementById('fileInput').addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            // Stop realtime data if active
             const realtimeBtn = document.getElementById('realtimeBtn');
             if (realtimeBtn.classList.contains('active')) {
                 if (eventSource) {
@@ -276,12 +273,7 @@
             }
 
             document.getElementById('file-info').textContent = `Selected file: ${file.name}`;
-
-            // Reset chart data
-            for (const chartId in chartData) {
-                chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
-            }
-
+            clearChartData(chartData);
             Papa.parse(file, {
                 header: true,
                 dynamicTyping: true,
@@ -298,7 +290,6 @@
         });
 
         function processCSVData(csvData) {
-            // Convert CSV data to the format expected by createDashboard
             const formattedData = csvData.map(row => {
                 return {
                     timestamp: row.timestamp,
@@ -307,7 +298,6 @@
                     'CH4 [% LEL]': row['CH4 [% LEL]']
                 };
             });
-
             createDashboard(formattedData);
         }
 
@@ -327,19 +317,17 @@
                 button.classList.add('active');
                 button.textContent = 'Stop Realtime';
                 document.getElementById('file-info').textContent = 'Loading realtime data...';
-
-                // Clear existing chart data
-                for (const chartId in chartData) {
-                    chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
-                }
-
-                // Initialize empty charts
+                clearChartData(chartData);
                 initializeEmptyCharts();
-
-                // Connect to SSE endpoint
                 connectToSSE();
             }
         });
+
+        function clearChartData(chartData) {
+            for (const chartId in chartData) {
+                chartData[chartId] = { sensor0: { x: [], y: [] }, sensor1: { x: [], y: [] } };
+            }
+        }
 
         function initializeEmptyCharts() {
             const now = new Date();
@@ -374,7 +362,6 @@
                 line: { color: '#3498db', width: 2 },
                 marker: { size: 6 }
             };
-
             const emptyTrace1 = {
                 x: [],
                 y: [],
@@ -384,12 +371,10 @@
                 marker: { size: 6 }
             };
 
-            // Set y-axis titles for each chart
             const chartTitles = {
                 'co2-chart': 'CO2 [ppm]',
                 'ch4-chart': 'CH4 [% LEL]'
             };
-
             for (const chartId in chartTitles) {
                 const layout = JSON.parse(JSON.stringify(emptyLayout));
                 layout.yaxis.title = chartTitles[chartId];
@@ -428,14 +413,12 @@
             const sensorId = data['sensor_id'];
             const sensorKey = sensorId === 0 ? 'sensor0' : 'sensor1';
 
-            // Update CO2 chart
             if (data['CO2 [ppm]'] !== undefined) {
                 chartData['co2-chart'][sensorKey].x.push(timestamp);
                 chartData['co2-chart'][sensorKey].y.push(data['CO2 [ppm]']);
                 updateChart('co2-chart', sensorKey);
             }
 
-            // Update CH4 chart
             if (data['CH4 [% LEL]'] !== undefined) {
                 chartData['ch4-chart'][sensorKey].x.push(timestamp);
                 chartData['ch4-chart'][sensorKey].y.push(data['CH4 [% LEL]']);
@@ -449,31 +432,23 @@
                 x: [chartData[chartId][sensorKey].x],
                 y: [chartData[chartId][sensorKey].y]
             };
-
             Plotly.restyle(chartId, update, traceIndex);
 
-            // Auto-range the x-axis to show most recent data
             const xaxis = {
                 autorange: true,
                 range: getXAxisRange(chartData[chartId])
             };
-
             Plotly.relayout(chartId, { xaxis: xaxis });
         }
 
         function getXAxisRange(data) {
-            // Combine all timestamps from both sensors
             const allTimestamps = [...data.sensor0.x, ...data.sensor1.x];
             if (allTimestamps.length === 0) return [null, null];
 
-            // Sort timestamps
             allTimestamps.sort((a, b) => a - b);
-
-            // Get min and max
             const minTime = allTimestamps[0];
             const maxTime = allTimestamps[allTimestamps.length - 1];
 
-            // Add some padding (10% of total time range)
             const range = maxTime - minTime;
             const padding = range * 0.1;
 
@@ -486,28 +461,23 @@
                 return;
             }
 
-            // Clear existing charts first
             const chartContainers = ['co2-chart', 'ch4-chart'];
             chartContainers.forEach(id => {
                 Plotly.purge(id);
             });
 
-            // Separate data by sensor_id and extract timestamps
             const sensor0Data = data.filter(item => item['sensor_id'] === 0);
             const sensor1Data = data.filter(item => item['sensor_id'] === 1);
 
-            // Extract timestamps and convert to Date objects
             const timestamps0 = sensor0Data.map(item => new Date(item['timestamp']));
             const timestamps1 = sensor1Data.map(item => new Date(item['timestamp']));
 
-            // Create traces for each chart
             createChart(
                 'co2-chart',
                 'CO2 [ppm]',
                 timestamps0, sensor0Data.map(item => item['CO2 [ppm]']),
                 timestamps1, sensor1Data.map(item => item['CO2 [ppm]'])
             );
-
             createChart(
                 'ch4-chart',
                 'CH4 [% LEL]',
